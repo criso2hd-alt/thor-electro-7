@@ -1,0 +1,11 @@
+# dependencies / tooling
+node_modules/
+.wrangler/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+
+# local debug screenshots
+.shot-*.png
