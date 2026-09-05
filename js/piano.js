@@ -66,20 +66,22 @@
     })();
 
     function grandSampleNote(midi, vel, when) {
+      const P = T.state.program.piano;
       let best = null, bd = 1e9;
       PN.samples.map.forEach((buf, sm) => { const d = Math.abs(sm - midi); if (d < bd) { bd = d; best = sm; } });
       if (best == null) { acousticNote(midi, vel, when, "grand"); return; }
       const v = makeVoice(midi); v.type = "grand";
       const src = ctx.createBufferSource(); src.buffer = PN.samples.map.get(best);
       src.playbackRate.value = Math.pow(2, (midi - best) / 12);
-      // single-velocity library: emulate dynamics with loudness + hammer brightness
+      // single-velocity library: emulate dynamics with loudness + hammer brightness.
+      // X1 (STRING DAMP) shifts overall brightness; X2 (RESONANCE) lengthens the release tail.
       const vg = ctx.createGain(); vg.gain.value = T.clamp(0.15 + 0.85 * vel * vel, 0, 1);
       const lp = ctx.createBiquadFilter(); lp.type = "lowpass";
-      lp.frequency.value = T.clamp(1600 + vel * vel * 16000, 1600, 18000);
+      lp.frequency.value = T.clamp(1300 + P.x1 * 3600 + vel * vel * 14000, 1300, 18000);
       const pan = ctx.createStereoPanner(); pan.pan.value = T.clamp((midi - 60) / 40, -1, 1) * 0.22;
       src.connect(lp); lp.connect(vg); vg.connect(pan); pan.connect(PN.bus);
       src.start(when);
-      v.srcs = [src]; v.vg = vg; v.relTau = 0.18;
+      v.srcs = [src]; v.vg = vg; v.relTau = 0.12 + P.x2 * 0.5;
     }
 
     // ---------- shared noise ----------
