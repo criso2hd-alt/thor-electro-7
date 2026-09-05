@@ -112,15 +112,13 @@
     const modal = document.getElementById("helpModal");
     if (help && modal) help.addEventListener("click", () => { modal.hidden = !modal.hidden; });
 
-    // dismissable "buy me a coffee" button — stays hidden once dismissed
+    // dismissable "buy me a coffee" button — hidden only for this visit; it
+    // reappears on every reload so it's always there to notice (or dismiss again)
     const coffee = document.getElementById("coffeeWidget");
     const coffeeX = document.getElementById("coffeeDismiss");
-    if (coffee && T.settings.hideCoffee) coffee.classList.add("hidden");
     if (coffee && coffeeX) coffeeX.addEventListener("click", e => {
       e.preventDefault();
       coffee.classList.add("hidden");
-      T.settings.hideCoffee = true;
-      T.persistSettings();
     });
   }
 

@@ -80,33 +80,67 @@
       const f0 = T.midiToFreq(midi);
       const sr = ctx.sampleRate;
       const upright = type === "upright";
-      const damp = [0.72, 0.82, 0.92, 1][bb];          // x1: lower = more damping? invert: higher x1 = brighter/longer
-      const bright = T.clamp((0.10 + 0.52 * (vb / 3)) * (0.75 + 0.5 * (bb / 3)) * (upright ? 0.82 : 1), 0.06, 0.88);
+      const w0 = 2 * Math.PI * f0 / sr;
 
-      let dur = T.clamp(5.5 * Math.pow(150 / f0, 0.45), 0.35, 7) * (upright ? 0.55 : 1) * (0.65 + 0.45 * damp);
+      // bucket-representative controls (buffer is cached per velocity/x1 bucket)
+      const velR = (vb + 0.5) / 4;                      // 0.125 .. 0.875
+      const xR = bb / 3;                                // 0..1  STRING DAMP (higher = brighter/longer)
+
+      // excitation: gentle so the FUNDAMENTAL dominates (not a bright noise burst)
+      const bright = T.clamp(0.16 + 0.30 * velR + 0.14 * xR, 0.12, 0.62) * (upright ? 0.9 : 1);
+      const hammer = T.clamp(0.62 - 0.25 * velR, 0.30, 0.70);   // tonal strike vs. noise balance
+
+      // grands ring long; higher notes decay faster; STRING DAMP lengthens it
+      let dur = T.clamp(9.0 * Math.pow(180 / f0, 0.5), 0.6, 16) * (upright ? 0.5 : 1) * (0.7 + 0.4 * xR);
       const len = Math.floor(sr * dur);
       const data = new Float32Array(len);
-      let N = Math.round(sr / f0);
-      if (N < 6) N = 6;
 
-      const ring = new Float32Array(N);
+      // ---- loop filters ----
+      const dLoss = T.clamp(0.14 + 0.40 * (1 - xR), 0.06, 0.60) * (upright ? 1.15 : 1); // one-pole loss (highs die first)
+      const rho = Math.pow(0.0005, 1 / Math.max(1, f0 * dur));   // per-loop gain -> ~ -66 dB over `dur`
+      const pole = rho * dLoss;
+      const g = rho * (1 - dLoss);
+      // cascade of first-order all-passes -> subtle inharmonic "shimmer" in the upper partials
+      const disp = upright ? 0.10 : 0.14;
+      const nAP = upright ? 1 : 2;
+
+      // keep tuning accurate: subtract the phase delay the loop filters add at f0
+      const cw = Math.cos(w0), sw = Math.sin(w0);
+      const pdLoss = Math.atan2(pole * sw, 1 - pole * cw) / w0;
+      const apAng = Math.atan2(-sw, disp + cw) - Math.atan2(-disp * sw, 1 + disp * cw);
+      const pdDisp = nAP * (-apAng / w0);
+      let Dtot = sr / f0 - pdLoss - pdDisp;
+      if (Dtot < 2) Dtot = 2;
+      const Lint = Math.floor(Dtot);
+      const bufLen = Lint + 2;
+      const dl = new Float32Array(bufLen);
+
+      // fundamental-heavy strike + coloured noise for the hammer
       let z = 0;
-      for (let i = 0; i < N; i++) {
-        const n = Math.random() * 2 - 1;
-        z += bright * (n - z);
-        const env = Math.exp(-2.6 * i / N);
-        ring[i] = z * env;
+      for (let i = 0; i < Lint; i++) {
+        const wn = Math.random() * 2 - 1;
+        z += bright * (wn - z);
+        const ph = 2 * Math.PI * i / Lint;
+        const tone = Math.sin(ph) + 0.35 * Math.sin(2 * ph) + 0.12 * Math.sin(3 * ph);
+        dl[i] = hammer * tone + (1 - hammer) * z;
       }
 
-      const tauBase = T.clamp(Math.pow(170 / f0, 0.8) * 3.2, 0.3, 9) * (upright ? 0.5 : 1) * (0.6 + 0.55 * damp);
-      const dp = Math.exp(-1 / (sr * tauBase));
-      let p = 0;
+      // tuned, damped, dispersive Karplus-Strong loop (fractional read = accurate pitch)
+      const apX = new Float32Array(nAP), apY = new Float32Array(nAP);
+      let widx = 0, yl = 0;
       for (let i = 0; i < len; i++) {
-        const cur = ring[p];
-        const nxt = ring[(p + 1) % N];
-        data[i] = cur;
-        ring[p] = (cur + nxt) * 0.5 * dp;
-        p = (p + 1) % N;
+        let rp = widx - Dtot; if (rp < 0) rp += bufLen;
+        const ri = rp | 0, rf = rp - ri;
+        const out = dl[ri] + rf * (dl[(ri + 1) % bufLen] - dl[ri]);
+        data[i] = out;
+        yl = g * out + pole * yl;                 // low-pass loss
+        let a = yl;
+        for (let m = 0; m < nAP; m++) {           // dispersion all-pass cascade
+          const y = disp * a + apX[m] - disp * apY[m];
+          apX[m] = a; apY[m] = y; a = y;
+        }
+        dl[widx] = a;
+        widx = widx + 1; if (widx >= bufLen) widx = 0;
       }
 
       // normalize + velocity level + tail fade
@@ -153,7 +187,7 @@
       v.vg = vg;
 
       const s1 = ctx.createBufferSource(); s1.buffer = buf;
-      const s2 = ctx.createBufferSource(); s2.buffer = buf; s2.detune.value = 2.9;
+      const s2 = ctx.createBufferSource(); s2.buffer = buf; s2.detune.value = 1.4;
       const p1 = ctx.createStereoPanner(); p1.pan.value = -0.22;
       const p2 = ctx.createStereoPanner(); p2.pan.value = 0.22;
       s1.connect(p1); p1.connect(vg);
