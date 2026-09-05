@@ -44,6 +44,44 @@
     PN.epIn = ctx.createGain();
     PN.epIn.connect(PN.bus);
 
+    // ---------- sampled GRAND (Salamander Grand Piano, Yamaha C5, CC-BY 3.0) ----------
+    // Real recordings, one every 3 semitones; played notes pitch-shift <=1 semitone.
+    PN.samples = { ready: false, map: new Map() };
+    (function loadGrand() {
+      const PC = { C:0, Cs:1, D:2, Ds:3, E:4, F:5, Fs:6, G:7, Gs:8, A:9, As:10, B:11 };
+      const files = ["C1","Ds1","Fs1","A1","C2","Ds2","Fs2","A2","C3","Ds3","Fs3","A3",
+                     "C4","Ds4","Fs4","A4","C5","Ds5","Fs5","A5","C6","Ds6","Fs6","A6",
+                     "C7","Ds7","Fs7","A7","C8"];
+      const midiOf = n => { const m = n.match(/^([A-G]s?)(\d)$/); return PC[m[1]] + (parseInt(m[2], 10) + 1) * 12; };
+      files.forEach(n => {
+        fetch("samples/piano/" + n + ".mp3")
+          .then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+          .then(a => ctx.decodeAudioData(a))
+          .then(buf => {
+            PN.samples.map.set(midiOf(n), buf);
+            if (PN.samples.map.size >= 10) PN.samples.ready = true;   // enough coverage to sound good
+          })
+          .catch(() => {});
+      });
+    })();
+
+    function grandSampleNote(midi, vel, when) {
+      let best = null, bd = 1e9;
+      PN.samples.map.forEach((buf, sm) => { const d = Math.abs(sm - midi); if (d < bd) { bd = d; best = sm; } });
+      if (best == null) { acousticNote(midi, vel, when, "grand"); return; }
+      const v = makeVoice(midi); v.type = "grand";
+      const src = ctx.createBufferSource(); src.buffer = PN.samples.map.get(best);
+      src.playbackRate.value = Math.pow(2, (midi - best) / 12);
+      // single-velocity library: emulate dynamics with loudness + hammer brightness
+      const vg = ctx.createGain(); vg.gain.value = T.clamp(0.15 + 0.85 * vel * vel, 0, 1);
+      const lp = ctx.createBiquadFilter(); lp.type = "lowpass";
+      lp.frequency.value = T.clamp(1600 + vel * vel * 16000, 1600, 18000);
+      const pan = ctx.createStereoPanner(); pan.pan.value = T.clamp((midi - 60) / 40, -1, 1) * 0.22;
+      src.connect(lp); lp.connect(vg); vg.connect(pan); pan.connect(PN.bus);
+      src.start(when);
+      v.srcs = [src]; v.vg = vg; v.relTau = 0.18;
+    }
+
     // ---------- shared noise ----------
     const noiseBuf = (function () {
       const len = ctx.sampleRate * 2;
@@ -332,7 +370,8 @@
       if (old) PN.release(midi, when, 0.008);
       const type = T.state.program.piano.type;
       PN.sustained.delete(midi);
-      if (type === "grand" || type === "upright") acousticNote(midi, vel, when, type);
+      if (type === "grand" && PN.samples.ready) grandSampleNote(midi, vel, when);
+      else if (type === "grand" || type === "upright") acousticNote(midi, vel, when, type);
       else if (type === "rhodes" || type === "wurli") epNote(midi, vel, when, type);
       else clavNote(midi, vel, when);
     };
@@ -370,7 +409,8 @@
       PN.release(midi, when);
       // damper thump on acoustic
       const type = T.state.program.piano.type;
-      if ((type === "grand" || type === "upright") && !T.state.sustain) {
+      const ksAcoustic = type === "upright" || (type === "grand" && !PN.samples.ready);
+      if (ksAcoustic && !T.state.sustain) {
         const tb = type === "upright" ? PN.thumpUpright : PN.thumpGrand;
         const ts = ctx.createBufferSource(); ts.buffer = tb;
         const tg = ctx.createGain(); tg.gain.value = 0.05;

@@ -210,7 +210,7 @@ Plain scripts loaded in order — no bundler. `window.THOR` is the shared namesp
 | `js/display.js` | The OLED canvas — boot animation, the transient "parameter" readout, and the idle status screen with VU meter. Also owns the shared `requestAnimationFrame` loop. |
 | `js/effects.js` | The master effects chain: FX1 modulations, ping-pong delay, convolution reverb, 3-band EQ, drive/saturation, compressor and limiter. |
 | `js/organ.js` | The tonewheel organ: additive drawbar voices, scanner vibrato/chorus, the rotating-speaker (Leslie) model, key click, percussion, and leakage/hum. |
-| `js/piano.js` | The piano engine: Karplus-Strong acoustic strings, 2-op FM Rhodes/Wurlitzer, and the plucked clavinet, plus a soundboard/EQ chain. |
+| `js/piano.js` | The piano engine: a **sampled Grand** (real recordings, pitch-shifted, with a synth fallback while they load), a Karplus-Strong Upright, 2-op FM Rhodes/Wurlitzer, and the plucked clavinet, plus a soundboard/EQ chain. |
 | `js/synth.js` | The analog-modeling synth: oscillators, sub/noise, unison, multimode filter, dual ADSRs, LFO, glide, drift, and voice allocation. |
 | `js/voices.js` | The voice manager — routes each note to the enabled engines, and handles layering, sustain, pitch bend and panic. |
 | `js/presets.js` | The 17-program factory bank. |
@@ -251,6 +251,12 @@ If you enjoy THOR Electro 7, you can support its development:
 
 ---
 
+## Credits
+
+The **Grand piano** uses the **[Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3)** (a Yamaha C5), recorded by **Alexander Holm** and licensed under [**CC-BY 3.0**](https://creativecommons.org/licenses/by/3.0/). The web-ready MP3s are sourced via [tonejs-instruments](https://github.com/nbrosowsky/tonejs-instruments). Every other sound — organ, synth, Rhodes/Wurlitzer/Clav, and all effects — is synthesized in code, with no samples.
+
+---
+
 ## License
 
-Released under the [MIT License](LICENSE). All sounds are synthesized in code — there are no third-party samples or assets.
+The **code** is released under the [MIT License](LICENSE). The Grand piano samples are licensed separately under CC-BY 3.0 — see [Credits](#credits).
