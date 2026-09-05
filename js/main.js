@@ -111,6 +111,17 @@
     const help = document.getElementById("helpBtn");
     const modal = document.getElementById("helpModal");
     if (help && modal) help.addEventListener("click", () => { modal.hidden = !modal.hidden; });
+
+    // dismissable "buy me a coffee" button — stays hidden once dismissed
+    const coffee = document.getElementById("coffeeWidget");
+    const coffeeX = document.getElementById("coffeeDismiss");
+    if (coffee && T.settings.hideCoffee) coffee.classList.add("hidden");
+    if (coffee && coffeeX) coffeeX.addEventListener("click", e => {
+      e.preventDefault();
+      coffee.classList.add("hidden");
+      T.settings.hideCoffee = true;
+      T.persistSettings();
+    });
   }
 
   // ---------- boot ----------
