@@ -245,15 +245,9 @@ wrangler pages deploy . --project-name thor-electro-7 --branch main
 
 If you enjoy THOR Electro 7, you can support its development:
 
-<a href="https://www.buymeacoffee.com/YOUR_USERNAME" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="45"></a>
+<a href="https://buymeacoffee.com/criso2hdj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="45"></a>
 
-> Replace `YOUR_USERNAME` above (and in [`.github/FUNDING.yml`](.github/FUNDING.yml)) with your Buy Me a Coffee handle — see the [setup note](#setting-up-buy-me-a-coffee) below.
-
-### Setting up Buy Me a Coffee
-
-1. Create a free account at **[buymeacoffee.com](https://www.buymeacoffee.com)** and pick a username — your tip page becomes `https://www.buymeacoffee.com/<username>`.
-2. In this README, replace `YOUR_USERNAME` in the button link with that handle.
-3. In `.github/FUNDING.yml`, set `buy_me_a_coffee:` to the same handle. GitHub then shows a **Sponsor** button at the top of the repo automatically.
+☕ **https://buymeacoffee.com/criso2hdj** — every coffee is hugely appreciated. You can also ⭐ the repo or report ideas in the [issues](https://github.com/criso2hd-alt/thor-electro-7/issues).
 
 ---
 
