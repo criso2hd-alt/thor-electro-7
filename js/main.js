@@ -130,28 +130,15 @@
       });
     }
 
-    // headless smoke-test hook
+    // demo / headless hook: ?autotest boots without the power-on click
+    // (used for automated screenshots); ?swap starts on the mirrored layout.
     if (location.search.indexOf("autotest") >= 0) {
-      try { T.powerOn(); } catch (e) {
-        const d = document.getElementById("errdump");
-        d.classList.add("show");
-        d.textContent += "[autotest] powerOn failed: " + e.message + "\n";
+      try { T.powerOn(); } catch (e) { /* audio may be unavailable in headless */ }
+      if (location.search.indexOf("swap") >= 0) {
+        T.settings.swapSides = true;
+        applySwap();
       }
       setTimeout(hideSplash, 250);
-      setTimeout(() => {
-        const c = document.getElementById("kbd");
-        const d = document.getElementById("errdump");
-        d.classList.add("show");
-        let px = "n/a";
-        try {
-          const g2 = c.getContext("2d");
-          px = Array.from(g2.getImageData(60, 40, 1, 1).data).join(",");
-        } catch (e) { px = "ERR " + e.message; }
-        d.textContent += "[dbg] kbd canvas " +
-          (c ? c.clientWidth + "x" + c.clientHeight + " attr " + c.width + "x" + c.height : "MISSING") +
-          " px@60,40=" + px + " dirty=" + T.KB.dirtyKbd +
-          " | rollWrap " + (document.getElementById("rollWrap") || {}).clientWidth + "\n";
-      }, 1200);
     }
   });
 
