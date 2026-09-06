@@ -51,13 +51,14 @@ kbd{ background:#26282e;border-radius:4px;padding:1px 5px;font-size:10px;color:#
   margin:52px auto 18px; width:130px;height:130px;border-radius:50%;
   border:2px solid #33353c; background:radial-gradient(circle at 38% 32%, #22242a, #0e0f12 70%);
   color:#ff4633; font-size:44px; cursor:pointer; position:relative; outline:none;
+  display:flex; align-items:center; justify-content:center; line-height:1;
   transition:box-shadow .3s, transform .1s;
 }
 #powerBtn:hover{ transform:scale(1.03); }
 .pwr-ring{ position:absolute; inset:-14px; border-radius:50%;
   border:1px solid rgba(255,70,51,.28); animation:pulse 2.4s infinite ease-in-out;}
 @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,70,51,.16); } 50%{ box-shadow:0 0 34px 6px rgba(255,70,51,.22);} }
-.pwr-icon{ position:relative; top:2px; filter:drop-shadow(0 0 8px rgba(255,70,51,.8)); }
+.pwr-icon{ display:block; line-height:1; filter:drop-shadow(0 0 8px rgba(255,70,51,.8)); }
 .splash-hint{ color:#8a8d95; font-size:13px; letter-spacing:.08em; }
 .splash-sub{ color:#565962; font-size:11px; margin-top:8px; letter-spacing:.14em; }
 
