@@ -5,6 +5,22 @@
 "use strict";
 (function (T) {
 
+  // Final safety limiter: linear below the threshold, soft-saturating to a
+  // ceiling above it. The WaveShaper clamps its input to [-1,1], so any
+  // overshoot is smoothly rounded off to the ceiling instead of hard-clipping
+  // (which is what causes the crackle).
+  function makeLimiterCurve() {
+    const n = 2048, c = new Float32Array(n);
+    const t = 0.72, ceil = 0.97;
+    for (let i = 0; i < n; i++) {
+      const x = (i / (n - 1)) * 2 - 1;
+      const a = Math.abs(x);
+      const y = a <= t ? a : t + (ceil - t) * Math.tanh((a - t) / (ceil - t));
+      c[i] = (x < 0 ? -y : y);
+    }
+    return c;
+  }
+
   function makeDriveCurve(amount) {
     const n = 1024, curve = new Float32Array(n);
     const k = 1 + amount * 16;
@@ -48,7 +64,11 @@
     E.eqHigh.connect(E.drivePre); E.drivePre.connect(E.shaper); E.shaper.connect(E.drivePost);
     E.drivePost.connect(E.postFx);
     E.postFx.connect(E.comp); E.comp.connect(E.makeup); E.makeup.connect(E.limiter);
-    E.limiter.connect(E.master); E.master.connect(E.analyser); E.analyser.connect(ctx.destination);
+    // final brickwall soft-clip so the output can never hard-clip / crackle
+    E.softClip = ctx.createWaveShaper(); E.softClip.oversample = "4x";
+    E.softClip.curve = makeLimiterCurve();
+    E.limiter.connect(E.master); E.master.connect(E.softClip);
+    E.softClip.connect(E.analyser); E.analyser.connect(ctx.destination);
 
     // ================= FX1 chains =================
     const fx1 = { chains: {}, cur: null };
