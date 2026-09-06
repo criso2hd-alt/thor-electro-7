@@ -8,9 +8,10 @@
 "use strict";
 (function (T) {
 
-  const HARMONICS = [0.5, 1.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0];
+  // 9 drawbars: 16'  5⅓'  8'   4'   2⅔'  2'   1⅗'  1⅓'  1'
+  const HARMONICS = [0.5, 1.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0];
   const DRAW_GAIN = [0, 0.11, 0.18, 0.27, 0.38, 0.52, 0.68, 0.84, 1.0];
-  const HARM_TRIM = [0.92, 0.82, 1.0, 0.97, 0.9, 0.94, 0.86, 0.8];
+  const HARM_TRIM = [0.92, 0.82, 1.0, 0.97, 0.9, 0.86, 0.82, 0.78, 0.72];
 
   const SCAN_RATE = 6.83;
   const TAP_DELAYS = [0, 0.15e-3, 0.32e-3, 0.68e-3, 1.4e-3, 2.9e-3, 6.0e-3];
@@ -258,23 +259,31 @@
       const bars = drawbarLevels();
 
       const oscs = [], gains = [];
-      for (let i = 0; i < 9; i++) {
-        const lv = bars[i];
-        if (!lv) continue;
-        const osc = ctx.createOscillator();
-        osc.type = "sine";
-        const f = f0 * HARMONICS[i];
-        if (f > ctx.sampleRate * 0.45) continue;
-        osc.frequency.value = f;
-        osc.detune.value = (Math.random() * 2 - 1) * 2.2;
-        const g = ctx.createGain();
-        g.gain.value = 0;
-        g.gain.setValueAtTime(0, when);
-        g.gain.linearRampToValueAtTime(DRAW_GAIN[lv] * HARM_TRIM[i] * 0.32, when + 0.006);
-        osc.connect(g); g.connect(O.scanIn);
-        O.driftAmt.connect(osc.detune);
-        osc.start(when);
-        oscs.push(osc); gains.push({ node: g, idx: i, lv });
+      try {
+        for (let i = 0; i < 9; i++) {
+          const lv = bars[i];
+          if (!lv) continue;
+          const f = f0 * HARMONICS[i];
+          if (!isFinite(f) || f > ctx.sampleRate * 0.45) continue;   // skip missing/too-high harmonics
+          const osc = ctx.createOscillator();
+          osc.type = "sine";
+          osc.frequency.value = f;
+          osc.detune.value = (Math.random() * 2 - 1) * 2.2;
+          const g = ctx.createGain();
+          g.gain.value = 0;
+          const target = DRAW_GAIN[lv] * (HARM_TRIM[i] || 0.8) * 0.32;
+          g.gain.setValueAtTime(0, when);
+          g.gain.linearRampToValueAtTime(target, when + 0.006);
+          osc.connect(g); g.connect(O.scanIn);
+          O.driftAmt.connect(osc.detune);
+          osc.start(when);
+          oscs.push(osc); gains.push({ node: g, idx: i, lv });
+        }
+      } catch (e) {
+        // never leave partially-started oscillators running (that = a stuck note)
+        oscs.forEach(o => { try { o.stop(); o.disconnect(); } catch (_) {} });
+        console.error("organ.noteOn", e);
+        return;
       }
 
       const v = { oscs, gains, on: true };
