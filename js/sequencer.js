@@ -6,16 +6,21 @@
 "use strict";
 (function (T) {
 
-  const TRACK_COLORS = ["#ff5f56", "#ffb340", "#ffe14d", "#7ee787", "#58d5f7", "#9b8cff", "#ff7ad9", "#c9f76f"];
+  const TRACK_COLORS = ["#ff5f56", "#ffb340", "#ffe14d", "#7ee787", "#58d5f7", "#9b8cff", "#ff7ad9", "#c9f76f",
+                        "#ff9f43", "#54e6c9", "#c77dff", "#f6c945", "#5aa9ff", "#ff6ea9", "#9be15d", "#dfe3ea"];
+  const MAX_TRACKS = 16;
 
+  function makeTrack(i) {
+    return {
+      name: "Track " + (i + 1), engine: "synth", color: TRACK_COLORS[i % TRACK_COLORS.length],
+      mute: false, solo: false, prog: null, notes: []
+    };
+  }
   function freshSong() {
     return {
       bpm: 112, bars: 4, swing: 0,
       metro: false, countin: false, recmode: "rep", grid: 0.25, qnt: true,
-      tracks: TRACK_COLORS.map((c, i) => ({
-        name: "Track " + (i + 1), engine: "synth", color: c,
-        mute: false, solo: false, prog: null, notes: []
-      }))
+      tracks: Array.from({ length: 8 }, (_, i) => makeTrack(i))
     };
   }
 
@@ -26,12 +31,13 @@
     stepIdx: 0, nextStepTime: 0, startTime: 0,
     timer: null, pendingRec: {}, undoStack: [], redoStack: []
   };
-  // merge defaults for songs saved by older versions
+  // merge defaults for songs saved by older versions (supports a variable track count)
   S.song = Object.assign(freshSong(), S.song);
-  S.song.tracks.forEach((t, i) => {
-    S.song.tracks[i] = Object.assign(freshSong().tracks[i], t);
-  });
-  if (!S.song.tracks || S.song.tracks.length !== 8) S.song = freshSong();
+  if (!Array.isArray(S.song.tracks) || S.song.tracks.length < 1 || S.song.tracks.length > MAX_TRACKS) {
+    S.song.tracks = freshSong().tracks;
+  }
+  S.song.tracks = S.song.tracks.map((t, i) => Object.assign(makeTrack(i), t));
+  S.MAX_TRACKS = MAX_TRACKS;
 
   const LOOKAHEAD = 0.14, TICK_MS = 25;
 
@@ -220,7 +226,18 @@
   S.newSong = function () {
     pushUndo();
     S.song = freshSong();
+    if (T.rebuildTracks) T.rebuildTracks();
     S.changed();
+  };
+
+  S.addTrack = function () {
+    if (S.song.tracks.length >= MAX_TRACKS) return false;
+    S.song.tracks.push(makeTrack(S.song.tracks.length));
+    S.rebuildBuckets();
+    T.store.set("thor_song", S.song);
+    if (T.rebuildTracks) T.rebuildTracks();
+    T.emit("song");
+    return true;
   };
 
   S.exportSong = function () {
@@ -240,6 +257,10 @@
         if (!obj.tracks) throw new Error("bad file");
         pushUndo();
         S.song = Object.assign(freshSong(), obj);
+        S.song.tracks = (Array.isArray(S.song.tracks) ? S.song.tracks : []).slice(0, MAX_TRACKS)
+          .map((t, i) => Object.assign(makeTrack(i), t));
+        if (!S.song.tracks.length) S.song.tracks = freshSong().tracks;
+        if (T.rebuildTracks) T.rebuildTracks();
         S.changed();
       } catch (e) { alert("Could not import: " + e.message); }
     };

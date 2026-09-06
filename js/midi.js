@@ -137,15 +137,38 @@
     }
   }
 
+  // ---------------- octave / transpose (global, affects every input) ----------------
+  function shiftAmount() { return ((T.state.octShift | 0) * 12) + (T.state.transpose | 0); }
+
+  function updateOctDisplay() {
+    const fmt = n => (n > 0 ? "+" : "") + n;
+    const ov = document.getElementById("octVal"), tv = document.getElementById("transVal");
+    if (ov) ov.textContent = fmt(T.state.octShift | 0);
+    if (tv) tv.textContent = fmt(T.state.transpose | 0);
+  }
+  T.updateOctDisplay = updateOctDisplay;
+
+  function onShiftChange() {
+    if (T.vm) T.vm.panic();                       // release anything held so nothing gets stranded
+    KB.pressed.clear(); KB.dirtyKbd = true;
+    Object.keys(kbHeld).forEach(k => (kbHeld[k] = false));
+    updateOctDisplay();
+  }
+  function setOctShift(o) { T.state.octShift = T.clamp(o, -4, 4); onShiftChange(); }
+  function setTranspose(t) { T.state.transpose = T.clamp(t, -12, 12); onShiftChange(); }
+  T.setOctShift = setOctShift; T.setTranspose = setTranspose;
+
   // ---------------- note routing ----------------
   function noteOn(m, vel) {
     if (!T.vm) return;
+    m = T.clamp(m + shiftAmount(), 0, 127);
     T.vm.liveNoteOn(m, vel == null ? 0.9 : vel);
     T.Seq.liveNoteOn(m, vel == null ? 0.9 : vel);
     flashMidi();
   }
   function noteOff(m) {
     if (!T.vm) return;
+    m = T.clamp(m + shiftAmount(), 0, 127);
     T.vm.liveNoteOff(m);
     T.Seq.liveNoteOff(m);
   }
@@ -239,9 +262,7 @@
       const code = e.code;
 
       if (code === "Minus" || code === "Equal") {
-        KB.octBase = T.clamp(KB.octBase + (code === "Equal" ? 12 : -12), 24, 72);
-        const ov = document.getElementById("octVal");
-        if (ov) ov.textContent = T.noteName(KB.octBase);
+        setOctShift((T.state.octShift | 0) + (code === "Equal" ? 1 : -1));
         e.preventDefault();
         return;
       }
@@ -260,10 +281,20 @@
     });
   }
 
+  function bindOctControls() {
+    const bind = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener("click", fn); };
+    bind("octUp", () => setOctShift((T.state.octShift | 0) + 1));
+    bind("octDown", () => setOctShift((T.state.octShift | 0) - 1));
+    bind("transUp", () => setTranspose((T.state.transpose | 0) + 1));
+    bind("transDown", () => setTranspose((T.state.transpose | 0) - 1));
+    updateOctDisplay();
+  }
+
   // ---------------- boot ----------------
   T.KeyboardInit = function () {
     initKbd();
     initComputerKeys();
+    bindOctControls();
     drawKbd();                          // immediate first paint
     setInterval(drawKbd, 60);
   };

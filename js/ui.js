@@ -289,6 +289,7 @@
   function buildTracks() {
     const col = document.getElementById("trackCol");
     if (!col) return;
+    col.innerHTML = "";
     T.Seq.song.tracks.forEach((tr, i) => {
       const row = document.createElement("div");
       row.className = "track-strip";
@@ -332,25 +333,40 @@
         if (T.Roll) { T.Roll.sel.clear(); T.Roll.dirty = true; }
       });
     });
+    // add-track button (up to the track cap)
+    if (T.Seq.song.tracks.length < (T.Seq.MAX_TRACKS || 16)) {
+      const add = document.createElement("button");
+      add.className = "add-track";
+      add.textContent = "+ ADD TRACK";
+      add.title = "Add another sequencer track";
+      add.addEventListener("click", () => T.Seq.addTrack());
+      col.appendChild(add);
+    }
+
     refreshTrackStrips();
 
-    // load-program double duty: shift-click strip loads its stored program
-    col.addEventListener("click", e => {
-      if (!e.shiftKey) return;
-      const strip = e.target.closest(".track-strip");
-      if (!strip) return;
-      const idx = Array.from(col.children).indexOf(strip);
-      const prog = T.Seq.song.tracks[idx].prog;
-      if (prog) { T.loadProgram(prog); toastTrack(idx, "program loaded"); }
-      else toastTrack(idx, "no captured program");
-    });
+    // load-program double duty: shift-click strip loads its stored program (bind once)
+    if (!col._shiftBound) {
+      col._shiftBound = true;
+      col.addEventListener("click", e => {
+        if (!e.shiftKey) return;
+        const strip = e.target.closest(".track-strip");
+        if (!strip) return;
+        const idx = Array.from(col.querySelectorAll(".track-strip")).indexOf(strip);
+        const prog = T.Seq.song.tracks[idx] && T.Seq.song.tracks[idx].prog;
+        if (prog) { T.loadProgram(prog); toastTrack(idx, "program loaded"); }
+        else toastTrack(idx, "no captured program");
+      });
+    }
   }
+  T.rebuildTracks = buildTracks;
 
   function refreshTrackStrips() {
     const col = document.getElementById("trackCol");
     if (!col) return;
-    Array.from(col.children).forEach((row, i) => {
+    Array.from(col.querySelectorAll(".track-strip")).forEach((row, i) => {
       const tr = T.Seq.song.tracks[i];
+      if (!tr) return;
       row.classList.toggle("armed", i === T.Seq.arm);
       row.querySelector(".dot").style.background = tr.color;
       row.querySelector(".tname").textContent = tr.name;
@@ -486,8 +502,7 @@
     bindProgNav();
     bindMisc();
     refreshAllUI();
-    const ov = document.getElementById("octVal");
-    if (ov) ov.textContent = T.noteName(T.KB.octBase);
+    if (T.updateOctDisplay) T.updateOctDisplay();
   };
 
 })(window.THOR);

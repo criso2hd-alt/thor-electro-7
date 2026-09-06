@@ -393,7 +393,7 @@ html,body{ height:100%; overflow:hidden; }
 .sbtn.danger{ color:#ff8d80; }
 #seqBody{ flex:1; min-height:0; display:flex; gap:10px; margin-top:6px; }
 
-#transportCol{ width:150px; flex:none; display:flex; flex-direction:column; gap:6px; overflow-y:auto;}
+#transportCol{ width:150px; flex:none; display:flex; flex-direction:column; gap:6px; overflow:hidden auto;}
 .tr-buttons{ display:flex; gap:6px; align-items:center;}
 .tr-btn{
   width:44px;height:40px; border-radius:9px; border:none; cursor:pointer;
@@ -441,6 +441,13 @@ html,body{ height:100%; overflow:hidden; }
 .track-strip .mini-btn.eng{ width:30px; font-size:7.5px; letter-spacing:.04em;}
 .track-strip .mini-btn.cap{ width:22px;}
 .track-strip .mini-btn.clr{ color:#775;}
+.add-track{
+  border:1px dashed #3a3d45; cursor:pointer; border-radius:7px; padding:5px 6px;
+  background:rgba(255,255,255,.03); color:#8d939b; font-size:9px; font-weight:800; letter-spacing:.06em;
+  flex:none;
+}
+.add-track:hover{ color:#e6e9ee; border-color:#5a5e68; background:rgba(255,255,255,.06); }
+.add-track:active{ transform:translateY(1px); }
 
 #rollWrap{
   position:relative; flex:1; min-width:0; min-height:0; border-radius:8px; overflow:hidden;
@@ -455,10 +462,21 @@ html,body{ height:100%; overflow:hidden; }
 #kbdWrap{ flex:none; height:132px; position:relative;}
 #kbd{ width:100%; height:100%; border-radius:8px;
   box-shadow:0 4px 10px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2);}
-#octInd{
-  position:absolute; right:10px; top:6px; font-size:10px; color:#481512; font-weight:700; letter-spacing:.08em;
-  background:rgba(244,242,236,.7); border-radius:4px; padding:1px 6px; pointer-events:none;}
-#octInd b{ color:#2b0d0b; }
+#octCtl{ position:absolute; right:10px; top:8px; display:flex; gap:8px; }
+.octc{ display:flex; align-items:center; gap:4px; background:rgba(18,19,23,.86); border-radius:6px; padding:3px 6px;
+  box-shadow:0 1px 3px rgba(0,0,0,.55); }
+.octc-lbl{ font-size:7.5px; font-weight:800; letter-spacing:.1em; color:#c3c8d2; margin-right:2px; }
+.octc b{ min-width:18px; text-align:center; font-size:11px; font-weight:800; color:#ffd7a0; font-family:Consolas,monospace;}
+.octc-btn{ width:18px; height:18px; border:none; border-radius:4px; cursor:pointer; padding:0;
+  background:linear-gradient(180deg,#2b2d33,#17181d); color:#e6e9ee; font-size:13px; font-weight:800; line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 1px 2px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.1); }
+.octc-btn:hover{ color:#fff; background:linear-gradient(180deg,#34363d,#1c1d22);}
+.octc-btn:active{ transform:translateY(1px);}
+
+/* 2x2 edit buttons (Undo/Redo over Quantize/Delete) */
+.edit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.edit-grid .sbtn{ width:100%; text-align:center; }
 
 /* ---------------- help modal ---------------- */
 #helpModal{

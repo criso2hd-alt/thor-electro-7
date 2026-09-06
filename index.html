@@ -334,11 +334,11 @@
             <div class="tr-buttons">
               <button class="tbtn led-green sm" data-songtoggle="qnt"><i></i>AUTO-Q</button>
             </div>
-            <div class="tr-buttons">
-              <button class="sbtn" id="rollUndo" title="Ctrl+Z">UNDO</button>
-              <button class="sbtn" id="rollRedo" title="Ctrl+Y">REDO</button>
-              <button class="sbtn" id="rollQuant" title="Q">QUANTIZE</button>
-              <button class="sbtn danger" id="rollDelSel">DELETE</button>
+            <div class="edit-grid">
+              <button class="sbtn" id="rollUndo" title="Undo (Ctrl+Z)">UNDO</button>
+              <button class="sbtn" id="rollRedo" title="Redo (Ctrl+Y)">REDO</button>
+              <button class="sbtn" id="rollQuant" title="Quantize selection (L)">QUANTIZE</button>
+              <button class="sbtn danger" id="rollDelSel" title="Delete selection (Del)">DELETE</button>
             </div>
             <div class="hint-box">
               drag=move &middot; edge=size<br>
@@ -358,7 +358,20 @@
       <!-- ============ KEYBOARD ============ -->
       <div id="kbdWrap">
         <canvas id="kbd"></canvas>
-        <div id="octInd">OCT <b id="octVal">C3</b> &nbsp;<kbd>-</kbd>/<kbd>=</kbd></div>
+        <div id="octCtl" title="Shift the pitch of everything you play — MIDI, computer keys and on-screen">
+          <div class="octc">
+            <span class="octc-lbl">OCTAVE</span>
+            <button class="octc-btn" id="octDown" title="Octave down (-)">&minus;</button>
+            <b id="octVal">0</b>
+            <button class="octc-btn" id="octUp" title="Octave up (=)">+</button>
+          </div>
+          <div class="octc">
+            <span class="octc-lbl">TRANSPOSE</span>
+            <button class="octc-btn" id="transDown" title="Semitone down">&minus;</button>
+            <b id="transVal">0</b>
+            <button class="octc-btn" id="transUp" title="Semitone up">+</button>
+          </div>
+        </div>
       </div>
        </div><!-- /perfPane -->
       </div><!-- /workspace -->

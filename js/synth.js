@@ -24,6 +24,13 @@
     S.lfoOsc.connect(S.lfoCutG); S.lfoOsc.connect(S.lfoPitchG); S.lfoOsc.connect(S.lfoAmpG);
     S.lfoOsc.start();
 
+    // dedicated MOD-WHEEL vibrato: a fixed ~5.5 Hz LFO on pitch, independent of the
+    // patch LFO, so the wheel always adds musical vibrato on any synth sound.
+    S.modWheel = 0;
+    S.modLfo = ctx.createOscillator(); S.modLfo.type = "sine"; S.modLfo.frequency.value = 5.5;
+    S.modLfoG = ctx.createGain(); S.modLfoG.gain.value = 0;
+    S.modLfo.connect(S.modLfoG); S.modLfo.start();
+
     const noiseBuf = (function () {
       const len = ctx.sampleRate * 2;
       const buf = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -99,6 +106,7 @@
         if (pn) { pn.pan.value = panv; o.connect(g); g.connect(pn); pn.connect(preFilter); }
         else { o.connect(g); g.connect(preFilter); }
         S.lfoPitchG.connect(o.detune);
+        S.modLfoG.connect(o.detune);        // mod-wheel vibrato
         o.start(when);
         oscs.push(o);
       }
@@ -275,9 +283,8 @@
     S.setLevel = function (v) { S.bus.gain.setTargetAtTime(v, ctx.currentTime, 0.03); };
     S.setBend = function (cents) { S.bendSrc.offset.setTargetAtTime(cents, ctx.currentTime, 0.015); };
     S.setModWheel = function (mw) {
-      S.lfoPitchG.gain.setTargetAtTime(
-        (T.state.program.synth.lfo.dest === "pit" ? T.state.program.synth.lfo.amt * 70 : 0) + mw * 50,
-        ctx.currentTime, 0.05);
+      S.modWheel = mw;
+      S.modLfoG.gain.setTargetAtTime(mw * 100, ctx.currentTime, 0.04);   // up to ~1 semitone vibrato
     };
 
     refreshLfoRouting();
