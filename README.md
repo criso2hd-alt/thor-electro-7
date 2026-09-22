@@ -6,6 +6,8 @@ Plug in a MIDI keyboard and play, or use the on-screen keyboard / your computer 
 
 ### ▶ Live: https://thor-electro-7.pages.dev
 
+[![Discord](https://img.shields.io/badge/Discord-join%20the%20community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mEfSW3XfNn) Questions, bug reports and patches to share: come say hi on Discord.
+
 ![THOR Electro 7 — full interface](docs/hero.png)
 
 The whole instrument scales to fill the screen. The **sequencer + keyboard** live in a side pane you can flip to the left or right with the ⇄ button:
